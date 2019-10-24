@@ -1,0 +1,53 @@
+body {
+    font: 20px Montserrat, sans-serif;
+    line-height: 1.8;
+    color: #f5f6f7;
+    }
+    p {
+    font-size: 16px;
+    }
+    .margin {
+    margin-bottom: 45px;
+    }
+    .bg-1 {
+    background-color: #ffffff; /* White */
+    color: #555555;
+    }
+    .bg-2 {
+    background-color: gray; /* Gray */
+    color: #ffffff;
+    }
+    .bg-3 {
+    background-color: #D3D3D3; /* Light Gray */
+    color: #555555;
+    width: 270px;
+    height: 200px;
+    }
+    .container-fluid {
+    padding-top: 50px;
+    padding-bottom: 50px;
+    }
+
+    .navbar {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border: 0;
+    border-radius: 0;
+    margin-bottom: 0;
+    font-size: 12px;
+    letter-spacing: 5px;
+    }
+    .navbar-default {
+    background-color: gray !important;
+    }
+    .navbar-default .navbar-brand {
+    color: #fff;
+    }
+    .navbar-nav  li a:hover {
+    color: #1abc9c !important;
+    }
+    .footer-class {
+      padding-top: 20px;
+      padding-bottom: 20px;
+      text-align: center;
+    }

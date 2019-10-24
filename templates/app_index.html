@@ -1,0 +1,83 @@
+  
+{% extends 'base.html' %}
+
+{% block head %}
+    <title>Task Master</title>
+{% endblock %}
+
+{% block body %}
+    <!-- Navbar -->
+    <nav class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Morphe my face</a>
+        </div>
+      </div>
+    </nav>
+    <!-- First Container (Grid) -->
+    <div class="container-fluid bg-1">
+
+      <div class="col-sm-12">
+        <div class="col-sm-8">
+          <div class="row text-center">
+            Look at the camera straight and keep your face neutral to take a photo / upoad a neutral photo/ drag and drop a photo
+          </div>
+          <div class="row text-center">
+            &nbsp;
+          </div>
+          <div class="row">
+            <div class="col-sm-6 text-center">
+              <div class="row">
+                  <h5 class="text-center">Camera</h5>
+              </div>
+              <div class="row">
+                <video autoplay class="bg-3" id="video">snap</video>
+              </div>
+              <div class="row">
+                <div class="col-sm-2">
+
+                </div>
+                <div class="col-sm-4">
+                  <button id="snap" class="btn btn-outline-primary btn-sm">Snap Photo</button>
+                </div>
+                <div class="col-sm-4">
+                  <input id="imageLoader" class="form-control" name="imageLoader" type="file" />
+                </div>
+                <div class="col-sm-2">
+
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="row"><h5 class="text-left">Change My Mood</h5></div>
+              <div class="row"><div class="float-left btn btn-primary" id="snap">Happy</div></div>
+              <div class="row"><div class="btn btn-primary" id="snap">Sad</div></div>
+              <div class="row"><div class="btn btn-primary" id="snap">Surprise</div></div>
+              <div class="row"><div class="btn btn-primary" id="snap">Disgust</div></div>
+              <div class="row"><div class="btn btn-primary" id="snap">Angry</div></div>
+              <div class="row"><div class="btn btn-primary" id="snap">Fear</div></div>
+            </div>
+          </div> <!-- row -->
+        </div> <!-- col-sm-8 -->
+        <div class="col-sm-4 text-center">
+          <div class="row">
+            <canvas class="bg-3" id="canvas">Video Camera</canvas>
+          </div>
+          <div class="row">
+            <h4 class="text-center"> Classified Emotion:</h4>
+            <div class="container-fluid bg-3 text-center">
+              Changed Face
+            </div>
+            <img class="bg-2" id="canvasMorph" width= "auto" height=auto></img>
+            <button type="button" class="btn btn-primary" id="imageSaver">Save photo</button>
+          </div>
+        </div> <!-- col-sm-4 -->
+      </div> <!-- col-sm-12 -->
+
+    </div><!-- container-fluid bg-1 -->
+    <!-- Footer -->
+     <footer class="bg-2 footer-class navbar navbar-fixed-bottom">
+        <p>Morphe my face by Samia</p>
+    </footer>
+    <script src="{{ url_for('static', filename='js/take_snapshot.js') }}"></script>
+{% endblock %}
