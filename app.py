@@ -231,13 +231,14 @@ def predict(img_read):
     tf.image.per_image_standardization(x)
 
     custom = model.predict(x)
+    pred_result= custom[0]
     print(custom[0])
     print(np.argmax(custom,axis=1))
     
     
     #emotion_analysis(custom[0])
-    load_img= cv2.imread('emotion.jpg')
-    return load_img
+    #load_img= cv2.imread('emotion.jpg')
+    return pred_result
 
 # Jakaria: function for saving image
 @app.route('/save-image', methods=['GET', 'POST'])
@@ -260,7 +261,7 @@ def save_image():
         #print(im_rgb.shape)
         #print('IMG',img)
         #print(read_img.dtype)
-        predict(im_rgb)
+        pred_result= predict(im_rgb)
    
 
     return 'ok'
