@@ -20,18 +20,18 @@
       <div class="col-sm-12">
         <div class="col-sm-8">
           <div class="row text-center">
-            Look at the camera straight and keep your face neutral to take a photo / upoad a neutral photo/ drag and drop a photo
+            Look at the camera straight and keep your face neutral to take/ upoad a photo for face morphing. Click/upload different facial expression and classify them with Classify Image button 
           </div>
           <div class="row text-center">
             &nbsp;
           </div>
           <div class="row">
-            <div class="col-sm-6 text-center">
+            <div class="col-sm-5 text-center">
               <div class="row">
                   <h5 class="text-center">Camera</h5>
               </div>
               <div class="row">
-                <video autoplay class="bg-3" id="video">snap</video>
+                <video autoplay class="bg-3" id="video"></video>
               </div>
               <div class="row">
                 <div class="col-sm-2">
@@ -48,28 +48,36 @@
                 </div>
               </div>
             </div>
-            <div class="col-sm-6">
-              <div class="row"><h5 class="text-left">Change My Mood</h5></div>
-              <div class="row"><div class="float-left btn btn-primary" id="snap">Happy</div></div>
-              <div class="row"><div class="btn btn-primary" id="snap">Sad</div></div>
-              <div class="row"><div class="btn btn-primary" id="snap">Surprise</div></div>
-              <div class="row"><div class="btn btn-primary" id="snap">Disgust</div></div>
-              <div class="row"><div class="btn btn-primary" id="snap">Angry</div></div>
-              <div class="row"><div class="btn btn-primary" id="snap">Fear</div></div>
+            <div class="col-sm-2">
+              <div class="row"><h5 class="text-left">Change Expression and select button</h5></div>
+              <div class="row"><div class="float-left btn btn-primary" id="happy">Happy</div></div>
+              <div class="row"><div class="btn btn-primary" id="sad">Sad</div></div>
+              <div class="row"><div class="btn btn-primary" id="surprised">Surprise</div></div>
+              <div class="row"><div class="btn btn-primary" id="disgust">Disgust</div></div>
+              <div class="row"><div class="btn btn-primary" id="angry">Angry</div></div>
+              <div class="row"><div class="btn btn-primary" id="fear">Fear</div></div>
             </div>
+            <div class="col-sm-5">
+              <div class="row"><div><canvas id="myChart" width="400" height="300"></canvas></div></canvas></div>
+              
+            </div>
+            
           </div> <!-- row -->
         </div> <!-- col-sm-8 -->
         <div class="col-sm-4 text-center">
           <div class="row">
-            <canvas class="bg-3" id="canvas">Video Camera</canvas>
+            <canvas class="bg-3" id="canvas"></canvas>
           </div>
           <div class="row">
-            <h4 class="text-center"> Classified Emotion:</h4>
+            <h4 class="text-center" id="result"> </h4> 
             <div class="container-fluid bg-3 text-center">
-              Changed Face
             </div>
             <img class="bg-2" id="canvasMorph" width= "auto" height=auto></img>
-            <button type="button" class="btn btn-primary" id="imageSaver">Save photo</button>
+            <button type="button" class="btn btn-primary" id="imageSaver">Classify Image</button>
+            <button type="button" class="btn btn-primary" id="morph">Morph Image</button>
+            <div class= "row">
+              <button type="button" class="btn btn-primary" id="reuse">Classify Morph Image</button>
+            </div>
           </div>
         </div> <!-- col-sm-4 -->
       </div> <!-- col-sm-12 -->
@@ -79,5 +87,318 @@
      <footer class="bg-2 footer-class navbar navbar-fixed-bottom">
         <p>Morphe my face by Samia</p>
     </footer>
-    <script src="{{ url_for('static', filename='js/take_snapshot.js') }}"></script>
-{% endblock %}
+    <script>
+    var video = document.getElementById('video');
+(function() {
+  // The width and height of the captured photo. We will set the
+  // width to the value defined here, but the height will be
+  // calculated based on the aspect ratio of the input stream.
+
+  var width = 320;    // We will scale the photo width to this
+  var height = 0;     // This will be computed based on the input stream
+
+  // |streaming| indicates whether or not we're currently streaming
+  // video from the camera. Obviously, we start at false.
+
+  var streaming = false;
+
+  // The various HTML elements we need to configure or control. These
+  // will be set by the startup() function.
+
+  var video = null;
+  var canvas = null;
+  var photo = null;
+  var startbutton = null;
+
+  function startup() {
+    video = document.getElementById('video');
+    canvas = document.getElementById('canvas');
+    photo = document.getElementById('photo');
+    startbutton = document.getElementById('startbutton');
+
+    navigator.mediaDevices.getUserMedia({video: true, audio: false})
+    .then(function(stream) {
+      video.srcObject = stream;
+      video.play();
+    })
+    .catch(function(err) {
+      console.log("An error occurred: " + err);
+    });
+
+    video.addEventListener('canplay', function(ev){
+      if (!streaming) {
+        height = video.videoHeight / (video.videoWidth/width);
+      
+        // Firefox currently has a bug where the height can't be read from
+        // the video, so we will make assumptions if this happens.
+      
+        if (isNaN(height)) {
+          height = width / (4/3);
+        }
+      
+        video.setAttribute('width', width);
+        video.setAttribute('height', height);
+        canvas.setAttribute('width', width);
+        canvas.setAttribute('height', height);
+        streaming = true;
+      }
+    }, false);
+
+    startbutton.addEventListener('click', function(ev){
+      takepicture();
+      ev.preventDefault();
+    }, false);
+    
+    clearphoto();
+  }
+
+  // Fill the photo with an indication that none has been
+  // captured.
+
+  function clearphoto() {
+    var context = canvas.getContext('2d');
+    context.fillStyle = "#AAA";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    var data = canvas.toDataURL('image/png');
+    photo.setAttribute('src', data);
+  }
+  
+  // Capture a photo by fetching the current contents of the video
+  // and drawing it into a canvas, then converting that to a PNG
+  // format data URL. By drawing it on an offscreen canvas and then
+  // drawing that to the screen, we can change its size and/or apply
+  // other changes before drawing it.
+
+  function takepicture() {
+    var context = canvas.getContext('2d');
+    if (width && height) {
+      canvas.width = width;
+      canvas.height = height;
+      context.drawImage(video, 0, 0, width, height);
+    
+      var data = canvas.toDataURL('image/png');
+      photo.setAttribute('src', data);
+    } else {
+      clearphoto();
+    }
+  }
+
+  // Set up our event listener to run the startup process
+  // once loading is complete.
+  window.addEventListener('load', startup, false);
+})();
+</script>
+
+<script>
+  (function() {
+    // The width and height of the captured photo. We will set the
+    // width to the value defined here, but the height will be
+    // calculated based on the aspect ratio of the input stream.
+
+    var width = 320;    // We will scale the photo width to this
+    var height = 0;     // This will be computed based on the input stream
+
+    // |streaming| indicates whether or not we're currently streaming
+    // video from the camera. Obviously, we start at false.
+
+    var streaming = false;
+
+    // The various HTML elements we need to configure or control. These
+    // will be set by the startup() function.
+
+    var video = null;
+    var canvas = null;
+    var startbutton = null;
+
+    function startup() {
+      video = document.getElementById('video');
+      canvas = document.getElementById('canvas');
+      startbutton = document.getElementById('snap');
+
+      navigator.mediaDevices.getUserMedia({video: true, audio: false})
+      .then(function(stream) {
+        video.srcObject = stream;
+        video.play();
+      })
+      .catch(function(err) {
+        console.log("An error occurred: " + err);
+      });
+
+      video.addEventListener('canplay', function(ev){
+        if (!streaming) {
+          height = video.videoHeight / (video.videoWidth/width);
+        
+          // Firefox currently has a bug where the height can't be read from
+          // the video, so we will make assumptions if this happens.
+        
+          if (isNaN(height)) {
+            height = width / (4/3);
+          }
+        
+          video.setAttribute('width', width);
+          video.setAttribute('height', height);
+          canvas.setAttribute('width', width);
+          canvas.setAttribute('height', height);
+          streaming = true;
+        }
+      }, false);
+
+      startbutton.addEventListener('click', function(ev){
+        takepicture();
+        ev.preventDefault();
+      }, false);
+      
+      clearphoto();
+    }
+
+    // Fill the photo with an indication that none has been
+    // captured.
+
+    function clearphoto() {
+      var context = canvas.getContext('2d');
+      context.fillStyle = "#AAA";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+    }
+    
+    // Capture a photo by fetching the current contents of the video
+    // and drawing it into a canvas, then converting that to a PNG
+    // format data URL. By drawing it on an offscreen canvas and then
+    // drawing that to the screen, we can change its size and/or apply
+    // other changes before drawing it.
+
+    function takepicture() {
+      var context = canvas.getContext('2d');
+      if (width && height) {
+        canvas.width = width;
+        canvas.height = height;
+        context.drawImage(video, 0, 0, width, height);
+
+      } else {
+        clearphoto();
+      }
+    }
+
+    // Set up our event listener to run the startup process
+    // once loading is complete.
+    window.addEventListener('load', startup, false);
+  })();
+
+
+
+
+
+
+//       var video = document.getElementById('video');
+// //Get access to the camera!
+// if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+// // Not adding `{ audio: true }` since we only want video now
+//     navigator.mediaDevices.getUserMedia({video: true}).then(function (stream) {
+// //video.src = window.URL.createObjectURL(stream);
+//         video.srcObject = stream;
+//         video.play();
+//     });
+// } else if (navigator.getUserMedia) { // Standard
+//     navigator.getUserMedia({video: true}, function (stream) {
+//         video.src = stream;
+//         video.play();
+//     }, errBack);
+// } else if (navigator.webkitGetUserMedia) { // WebKit-prefixed
+//     navigator.webkitGetUserMedia({video: true}, function (stream) {
+//         video.src = window.webkitURL.createObjectURL(stream);
+//         video.play();
+//     }, errBack);
+// } else if (navigator.mozGetUserMedia) { // Mozilla-prefixed
+//     navigator.mozGetUserMedia({video: true}, function (stream) {
+//         video.srcObject = stream;
+//         video.play();
+//     }, errBack);
+// }
+var imageLoader = document.getElementById('imageLoader');
+imageLoader.addEventListener('change', handleImage, false);
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+function handleImage(e) {
+var reader = new FileReader();
+reader.onload = function (event) {
+    var img = new Image();
+    img.onload = function () {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        var c = document.getElementById("canvas");
+        var ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+    }
+    img.src = event.target.result;
+}
+reader.readAsDataURL(e.target.files[0]);
+}
+
+
+var imageSaver = document.getElementById('imageSaver');
+
+imageSaver.addEventListener('click', saveImage, false);
+
+function saveImage(e) {
+    console.log('hello');
+    // var dataURL = canvas.toDataURL();
+    var dataURL = canvas.toDataURL('image/png');
+    $.ajax({
+        type: "GET",
+        url: "/save-image",
+        data: {
+            imgBase64: dataURL
+        },
+        success: function(data){
+
+            rep = data.replace("[",""),
+            rep = rep.replace("]",""),
+            _data= rep.valueOf(),
+            
+            array = _data.split(","),
+
+             console.log(typeof array);
+            
+            $('#result').text(' Predicted Output: '+array);
+            new Chart(document.getElementById("myChart"), {
+            type: 'horizontalBar',
+            data: {
+              labels: ["surprised", "fearful", "disgusted", "happy", "sad", "angry", "neutral"],
+              datasets: [
+              {
+                label: "Population (millions)",
+                backgroundColor: ["#3e95cd", "#8e5ea2","#3cba9f","#e8c3b9","#c45850", "#8e5ea2", "#3cba9f"],
+                data: array,
+              }
+              ]
+              },
+                options: {
+                  scales: {
+                    xAxes: [{
+                        stacked: true
+                    }],
+                    yAxes: [{
+                        stacked: true
+                    }]
+                },
+                legend: { display: false },
+                title: {
+                  display: true,
+                text: 'Emotion in percentage'
+              }
+              }
+            });
+        
+        }
+    }).done(function (o) {
+        console.log('saved');
+        // If you want the file to be visible in the browser
+        // - please modify the callback in javascript. All you
+        // need is to return the url to the file, you just saved
+        // and than put the image in your browser.
+    });
+}
+</script>
+    {% endblock %}
