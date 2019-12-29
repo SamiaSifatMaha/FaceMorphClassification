@@ -24,9 +24,6 @@ from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-
-
-
 #sys.path.append(os.path.abspath("./model"))
 #from load import * 
 
@@ -170,8 +167,8 @@ class AlignDlib:
         H = cv2.getAffineTransform(npLandmarks[npLandmarkIndices],
                                     MINMAX_TEMPLATE[npLandmarkIndices])
         thumbnail = cv2.warpAffine(rgbImg, H, (1400, 1400))
-        print('Affline transformation',H)
-        print('Thumbnail',thumbnail)
+        #print('Affline transformation',H)
+        #print('Thumbnail',thumbnail)
 
         
         return thumbnail, H
@@ -182,9 +179,7 @@ def align_face(imgData):
     # Detect face and return bounding box
     jc_orig= imgData
     bb = alignment.getLargestFaceBoundingBox(jc_orig)
-    print(jc_orig.shape)
     row,col,= jc_orig.shape[:2]
-    print(row, col)
     # Transform image using specified face landmark indices and crop image to 96x96
     jc_aligned, M = alignment.align(96, jc_orig, bb, landmarkIndices=AlignDlib.OUTER_EYES_AND_NOSE)
     rgb_image = cv2.cvtColor(jc_aligned, cv2.COLOR_BGR2RGB)
@@ -199,30 +194,93 @@ def align_face(imgData):
 
     return res
 
-def emotion_analysis(emotions):
-    objects = ('surprised', 'fearful', 'disgusted', 'happy', 'sad', 'angry', 'neutral')
-    y_pos = np.arange(len(objects))
-    plt.barh(y_pos, emotions, align='center', alpha=0.5)
-    plt.yticks(y_pos, objects)
-    plt.xlabel('percentage')
+def normalize_image(img_read):
+    img_y_cr_cb = cv2.cvtColor(img_read, cv2.COLOR_BGR2YCrCb)
+    y, cr, cb = cv2.split(img_y_cr_cb)
+    img_y_np = np.asarray(y).astype(float)
 
-    plt.savefig("emotion.jpg")
-    #plt.show()
+    img_y_np /= 255
+    img_y_np -= img_y_np.mean()
+    img_y_np /= img_y_np.std()
+    scale = np.max([np.abs(np.percentile(img_y_np, 1.0)),
+                        np.abs(np.percentile(img_y_np, 99.0))])
+    img_y_np = img_y_np / scale
+    img_y_np = np.clip(img_y_np, -1.0, 1.0)
+    img_y_np = (img_y_np + 1.0) / 2.0
+        
+    img_y_np = (img_y_np * 255 + 0.5).astype(np.uint8)
 
-# imgData as path to newly uploaded image
-# @app.route('/predict/',methods=['GET','POST'])
-def predict(img_read):
+    img_y_cr_cb_eq = cv2.merge((img_y_np, cr, cb))
+        
+    img_nrm = cv2.cvtColor(img_y_cr_cb_eq, cv2.COLOR_YCR_CB2BGR)
 
-    # imgData = request.get_data()
-    # img_load = "upload/" # Enter Directory of all images 
-    # data_path = os.path.join(img_load,'*.png')
-    # files = glob.glob(data_path)
-    # for f1 in files:
-    #img_read = imread(f1)
-    print(img_read)
+
+    return img_nrm
+
+def reverse_image(img_read, new_img):
+    jc_orig = img_read
+    bb = alignment.getLargestFaceBoundingBox(jc_orig)
+    row,col,= jc_orig.shape[:2]
+    jc_aligned, M = alignment.align(96, jc_orig, bb, landmarkIndices=AlignDlib.OUTER_EYES_AND_NOSE)
+    y=0 
+    x=0
+    h=0
+    w=0
+    crop_img = jc_aligned[y+510:y+h-540, x+440:x+w-750]
+
+    width = int(crop_img.shape[1])
+    height = int(crop_img.shape[0])
+
+    new_img = cv2.resize(new_img*255,(width, height))
+    jc_aligned[y+510:y+h-540, x+440:x+w-750] = new_img
+    M1 = cv2.invertAffineTransform(M)
+    new= cv2.warpAffine(jc_aligned,M1,(1400,1400))
+    new1 = new[y:y+h-(1400-row), x:x+w-(1400-col)]
+    back = cv2.resize(new1,(col, row))
+
+    kernel = np.ones((5, 5), np.float32)/25
+    dstination = cv2.filter2D(back, -1, kernel)
+
+    return dstination
+
+    
+
+
+def load_morph():
+    model= load_model('DetectedImg/all_tune_wt.h5') 
+    return model
+
+def norm_img_list(img_read):
+    img_nrm = normalize_image(img_read)
+    crop_and_align_img= align_face(img_nrm)
+    
+    images_list = list()
+    images_list.append(crop_and_align_img)
+    image = np.array(images_list, 'float32')
+    image /= 255
+
+
+def angry(img_read):
+    image = norm_img_list(img_read)
+    model= load_morph()
+    context=["5"]
+    num_classes=6
+    lines= np.array(context)
+    emotion = keras.utils.to_categorical(lines, num_classes)
+    labels = np.array(emotion).astype('float32')
+
+    custom = model.predict([image, labels]) 
+
+    angry_img = reverse_image(img_read, custom[0])
+
+    return angry_img
+
+def model_classification(img_read):
+
+
     crop_and_align_img= align_face(img_read)
 
-    model= load_model('DetectedImg/weights_best3 0.h5') 
+    model= load_model('weights_best3 0.h5') 
     x = image.img_to_array(crop_and_align_img)
     x = np.expand_dims(x, axis = 0)
 
@@ -231,19 +289,15 @@ def predict(img_read):
     tf.image.per_image_standardization(x)
 
     custom = model.predict(x)
-    pred_result= custom[0]
-    print(custom[0])
-    print(np.argmax(custom,axis=1))
-    
-    
-    #emotion_analysis(custom[0])
-    #load_img= cv2.imread('emotion.jpg')
-    return pred_result
+
+    return custom
 
 # Jakaria: function for saving image
 @app.route('/save-image', methods=['GET', 'POST'])
 def save_image():
     data_url = request.values['imgBase64']
+    legend = 'Emotion Percentage'
+    labels = ['surprised', 'fearful', 'disgusted', 'happy', 'sad', 'angry', 'neutral']
     content = data_url.split(';')[1]
     image_encoded = content.split(',')[1]
     body = base64.b64decode(bytes(image_encoded.encode('utf-8')))
@@ -252,24 +306,35 @@ def save_image():
         fh.write(body)
         read_img= ndimage.imread(new_file_path_and_name) 
         im_rgb = cv2.cvtColor(read_img, cv2.COLOR_BGR2RGB)
-        #img= np.asarray(read_img)
-        #rgb = img.convert('rgb')
-        #img= np.array(read_img)
-        #img=cv2.imread(read_img)
+        custom= model_classification(im_rgb)
+        custom = [x * 100 for x in custom]
         
-        #print('PNG',im_rgb)
-        #print(im_rgb.shape)
-        #print('IMG',img)
-        #print(read_img.dtype)
-        pred_result= predict(im_rgb)
-   
+        pred_result= custom[0]
+        print(pred_result)
+        #pred_result= pred_result.astype(np.str)
+        sting_result= np.array2string(pred_result, precision=2, separator=",", suppress_small= True)
+        print(sting_result)
+        classification_result = sting_result.strip()
+        classification_result = classification_result.replace(" ", "")
+        print(classification_result)
 
-    return 'ok'
+        
+        # res_array= np.array(custom)
+        # list(res_array)
+        # arr= res_array.tolist()
+        # tup= tuple(arr)
+
+    return classification_result
+
+        
+
 
 
 # Jakaria: Loading homepage
 @app.route('/')
 def app_index():
+
+
     return render_template('app_index.html')
 
 if __name__ == "__main__":
