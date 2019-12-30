@@ -153,7 +153,7 @@ class AlignDlib:
             landmarks = self.findLandmarks(rgbImg, bb)
 
         row,col,= rgbImg.shape[:2]
-        print(row, col)
+        #print(row, col)
         bottom= rgbImg[row-2:row, 0:col]
         mean= cv2.mean(bottom)[0]
         bordersize=0
@@ -213,11 +213,12 @@ def normalize_image(img_read):
     img_y_cr_cb_eq = cv2.merge((img_y_np, cr, cb))
         
     img_nrm = cv2.cvtColor(img_y_cr_cb_eq, cv2.COLOR_YCR_CB2BGR)
-
+    
 
     return img_nrm
 
 def reverse_image(img_read, new_img):
+    alignment = AlignDlib(facePredictor)
     jc_orig = img_read
     bb = alignment.getLargestFaceBoundingBox(jc_orig)
     row,col,= jc_orig.shape[:2]
@@ -247,11 +248,11 @@ def reverse_image(img_read, new_img):
 
 
 def load_morph():
-    model= load_model('DetectedImg/all_tune_wt.h5') 
+    model= load_model('all_tune_wt.h5') 
     return model
 
-def norm_img_list(img_read):
-    img_nrm = normalize_image(img_read)
+def norm_img_list(img_nrm):
+
     crop_and_align_img= align_face(img_nrm)
     
     images_list = list()
@@ -259,19 +260,114 @@ def norm_img_list(img_read):
     image = np.array(images_list, 'float32')
     image /= 255
 
+    return image
+
+
+def happy(img_read):
+    image = normalize_image(img_read)
+    print(image.shape)
+    img_nrm = norm_img_list(image)
+    print(img_nrm.shape)
+    happy_model= load_morph()
+    context=["3"]
+    num_classes=6
+    lines= np.array(context)
+    emotion = keras.utils.to_categorical(lines, num_classes)
+    labels = np.array(emotion).astype('float32')
+
+    custom = happy_model.predict([img_nrm, labels]) 
+
+    happy_img = reverse_image(image, custom[0])
+
+    return happy_img
+
+def surprised(img_read):
+    image = normalize_image(img_read)
+    print(image.shape)
+    img_nrm = norm_img_list(image)
+    print(img_nrm.shape)
+    surprised_model= load_morph()
+    context=["0"]
+    num_classes=6
+    lines= np.array(context)
+    emotion = keras.utils.to_categorical(lines, num_classes)
+    labels = np.array(emotion).astype('float32')
+
+    custom = surprised_model.predict([img_nrm, labels]) 
+
+    surprised_img = reverse_image(image, custom[0])
+
+    return surprised_img
+
+def fear(img_read):
+    image = normalize_image(img_read)
+    print(image.shape)
+    img_nrm = norm_img_list(image)
+    print(img_nrm.shape)
+    fear_model= load_morph()
+    context=["1"]
+    num_classes=6
+    lines= np.array(context)
+    emotion = keras.utils.to_categorical(lines, num_classes)
+    labels = np.array(emotion).astype('float32')
+
+    custom = fear_model.predict([img_nrm, labels]) 
+
+    fear_img = reverse_image(image, custom[0])
+
+    return fear_img
+
+def disgust(img_read):
+    image = normalize_image(img_read)
+    print(image.shape)
+    img_nrm = norm_img_list(image)
+    print(img_nrm.shape)
+    disgust_model= load_morph()
+    context=["2"]
+    num_classes=6
+    lines= np.array(context)
+    emotion = keras.utils.to_categorical(lines, num_classes)
+    labels = np.array(emotion).astype('float32')
+
+    custom = disgust_model.predict([img_nrm, labels]) 
+
+    disgust_img = reverse_image(image, custom[0])
+
+    return disgust_img
+
+def sad(img_read):
+    image = normalize_image(img_read)
+    print(image.shape)
+    img_nrm = norm_img_list(image)
+    print(img_nrm.shape)
+    sad_model= load_morph()
+    context=["4"]
+    num_classes=6
+    lines= np.array(context)
+    emotion = keras.utils.to_categorical(lines, num_classes)
+    labels = np.array(emotion).astype('float32')
+
+    custom = sad_model.predict([img_nrm, labels]) 
+
+    sad_img = reverse_image(image, custom[0])
+
+    return sad_img
 
 def angry(img_read):
-    image = norm_img_list(img_read)
-    model= load_morph()
+    image = normalize_image(img_read)
+    print(image.shape)
+    img_nrm = norm_img_list(image)
+    print(img_nrm.shape)
+    angry_model= load_morph()
     context=["5"]
     num_classes=6
     lines= np.array(context)
     emotion = keras.utils.to_categorical(lines, num_classes)
     labels = np.array(emotion).astype('float32')
 
-    custom = model.predict([image, labels]) 
+    custom = angry_model.predict([img_nrm, labels]) 
 
-    angry_img = reverse_image(img_read, custom[0])
+    angry_img = reverse_image(image, custom[0])
 
     return angry_img
 
@@ -292,7 +388,7 @@ def model_classification(img_read):
 
     return custom
 
-# Jakaria: function for saving image
+# Jakaria: function for classify image
 @app.route('/save-image', methods=['GET', 'POST'])
 def save_image():
     data_url = request.values['imgBase64']
@@ -310,13 +406,13 @@ def save_image():
         custom = [x * 100 for x in custom]
         
         pred_result= custom[0]
-        print(pred_result)
+        #print(pred_result)
         #pred_result= pred_result.astype(np.str)
         sting_result= np.array2string(pred_result, precision=2, separator=",", suppress_small= True)
         print(sting_result)
         classification_result = sting_result.strip()
         classification_result = classification_result.replace(" ", "")
-        print(classification_result)
+        #print(classification_result)
 
         
         # res_array= np.array(custom)
@@ -325,6 +421,126 @@ def save_image():
         # tup= tuple(arr)
 
     return classification_result
+
+@app.route('/happy-image', methods=['GET', 'POST'])
+def happy_image():
+    data_url = request.values['imgBase64']
+    content = data_url.split(';')[1]
+    image_encoded = content.split(',')[1]
+    body = base64.b64decode(bytes(image_encoded.encode('utf-8')))
+    new_file_path_and_name = datetime.datetime.now().strftime("upload/"+"%y%m%d_%H%M%S")+"image.png"
+    with open(new_file_path_and_name, "wb") as fh:
+        fh.write(body)
+
+    read_img= ndimage.imread(new_file_path_and_name) 
+    im_rgb = cv2.cvtColor(read_img, cv2.COLOR_BGR2RGB)
+
+    custom= happy(im_rgb)
+    print(custom)
+    cv2.imwrite("upload/happy.jpg", custom)
+    #custom = [x * 100 for x in custom]
+        
+    return custom
+
+@app.route('/surprised-image', methods=['GET', 'POST'])
+def surprised_image():
+    data_url = request.values['imgBase64']
+    content = data_url.split(';')[1]
+    image_encoded = content.split(',')[1]
+    body = base64.b64decode(bytes(image_encoded.encode('utf-8')))
+    new_file_path_and_name = datetime.datetime.now().strftime("upload/"+"%y%m%d_%H%M%S")+"image.png"
+    with open(new_file_path_and_name, "wb") as fh:
+        fh.write(body)
+
+    read_img= ndimage.imread(new_file_path_and_name) 
+    im_rgb = cv2.cvtColor(read_img, cv2.COLOR_BGR2RGB)
+
+    custom= surprised(im_rgb)
+    print(custom)
+    cv2.imwrite("upload/surprised.jpg", custom)
+    #custom = [x * 100 for x in custom]
+        
+    return "0"
+
+@app.route('/fear-image', methods=['GET', 'POST'])
+def fear_image():
+    data_url = request.values['imgBase64']
+    content = data_url.split(';')[1]
+    image_encoded = content.split(',')[1]
+    body = base64.b64decode(bytes(image_encoded.encode('utf-8')))
+    new_file_path_and_name = datetime.datetime.now().strftime("upload/"+"%y%m%d_%H%M%S")+"image.png"
+    with open(new_file_path_and_name, "wb") as fh:
+        fh.write(body)
+
+    read_img= ndimage.imread(new_file_path_and_name) 
+    im_rgb = cv2.cvtColor(read_img, cv2.COLOR_BGR2RGB)
+
+    custom= fear(im_rgb)
+    print(custom)
+    cv2.imwrite("upload/fear.jpg", custom)
+    #custom = [x * 100 for x in custom]
+        
+    return "0"
+
+@app.route('/disgust-image', methods=['GET', 'POST'])
+def disgust_image():
+    data_url = request.values['imgBase64']
+    content = data_url.split(';')[1]
+    image_encoded = content.split(',')[1]
+    body = base64.b64decode(bytes(image_encoded.encode('utf-8')))
+    new_file_path_and_name = datetime.datetime.now().strftime("upload/"+"%y%m%d_%H%M%S")+"image.png"
+    with open(new_file_path_and_name, "wb") as fh:
+        fh.write(body)
+
+    read_img= ndimage.imread(new_file_path_and_name) 
+    im_rgb = cv2.cvtColor(read_img, cv2.COLOR_BGR2RGB)
+
+    custom= disgust(im_rgb)
+    print(custom)
+    cv2.imwrite("upload/disgust.jpg", custom)
+    #custom = [x * 100 for x in custom]
+        
+    return "0"
+
+@app.route('/sad-image', methods=['GET', 'POST'])
+def sad_image():
+    data_url = request.values['imgBase64']
+    content = data_url.split(';')[1]
+    image_encoded = content.split(',')[1]
+    body = base64.b64decode(bytes(image_encoded.encode('utf-8')))
+    new_file_path_and_name = datetime.datetime.now().strftime("upload/"+"%y%m%d_%H%M%S")+"image.png"
+    with open(new_file_path_and_name, "wb") as fh:
+        fh.write(body)
+
+    read_img= ndimage.imread(new_file_path_and_name) 
+    im_rgb = cv2.cvtColor(read_img, cv2.COLOR_BGR2RGB)
+
+    custom= sad(im_rgb)
+    print(custom)
+    cv2.imwrite("upload/sad.jpg", custom)
+    #custom = [x * 100 for x in custom]
+        
+    return "0"
+
+@app.route('/angry-image', methods=['GET', 'POST'])
+def angry_image():
+    data_url = request.values['imgBase64']
+    content = data_url.split(';')[1]
+    image_encoded = content.split(',')[1]
+    body = base64.b64decode(bytes(image_encoded.encode('utf-8')))
+    new_file_path_and_name = datetime.datetime.now().strftime("upload/"+"%y%m%d_%H%M%S")+"image.png"
+    with open(new_file_path_and_name, "wb") as fh:
+        fh.write(body)
+
+    read_img= ndimage.imread(new_file_path_and_name) 
+    im_rgb = cv2.cvtColor(read_img, cv2.COLOR_BGR2RGB)
+
+    custom= angry(im_rgb)
+    print(custom)
+    cv2.imwrite("upload/angry.jpg", custom)
+    #custom = [x * 100 for x in custom]
+        
+    return "0"
 
         
 
