@@ -26,7 +26,7 @@
             &nbsp;
           </div>
           <div class="row">
-            <div class="col-sm-5 text-center">
+            <div class="col-sm-6 text-center">
               <div class="row">
                   <h5 class="text-center">Camera</h5>
               </div>
@@ -57,7 +57,7 @@
               <div class="row"><div class="btn btn-primary" id="angry">Angry</div></div>
               <div class="row"><div class="btn btn-primary" id="fear">Fear</div></div>
             </div>
-            <div class="col-sm-5">
+            <div class="col-sm-4">
               <div class="row"><div><canvas id="myChart" width="400" height="300"></canvas></div></canvas></div>
               
             </div>
@@ -87,108 +87,7 @@
      <footer class="bg-2 footer-class navbar navbar-fixed-bottom">
         <p>Morphe my face by Samia</p>
     </footer>
-    <script>
-    var video = document.getElementById('video');
-(function() {
-  // The width and height of the captured photo. We will set the
-  // width to the value defined here, but the height will be
-  // calculated based on the aspect ratio of the input stream.
 
-  var width = 320;    // We will scale the photo width to this
-  var height = 0;     // This will be computed based on the input stream
-
-  // |streaming| indicates whether or not we're currently streaming
-  // video from the camera. Obviously, we start at false.
-
-  var streaming = false;
-
-  // The various HTML elements we need to configure or control. These
-  // will be set by the startup() function.
-
-  var video = null;
-  var canvas = null;
-  var photo = null;
-  var startbutton = null;
-
-  function startup() {
-    video = document.getElementById('video');
-    canvas = document.getElementById('canvas');
-    photo = document.getElementById('photo');
-    startbutton = document.getElementById('startbutton');
-
-    navigator.mediaDevices.getUserMedia({video: true, audio: false})
-    .then(function(stream) {
-      video.srcObject = stream;
-      video.play();
-    })
-    .catch(function(err) {
-      console.log("An error occurred: " + err);
-    });
-
-    video.addEventListener('canplay', function(ev){
-      if (!streaming) {
-        height = video.videoHeight / (video.videoWidth/width);
-      
-        // Firefox currently has a bug where the height can't be read from
-        // the video, so we will make assumptions if this happens.
-      
-        if (isNaN(height)) {
-          height = width / (4/3);
-        }
-      
-        video.setAttribute('width', width);
-        video.setAttribute('height', height);
-        canvas.setAttribute('width', width);
-        canvas.setAttribute('height', height);
-        streaming = true;
-      }
-    }, false);
-
-    startbutton.addEventListener('click', function(ev){
-      takepicture();
-      ev.preventDefault();
-    }, false);
-    
-    clearphoto();
-  }
-
-  // Fill the photo with an indication that none has been
-  // captured.
-
-  function clearphoto() {
-    var context = canvas.getContext('2d');
-    context.fillStyle = "#AAA";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    var data = canvas.toDataURL('image/png');
-    photo.setAttribute('src', data);
-  }
-  
-  // Capture a photo by fetching the current contents of the video
-  // and drawing it into a canvas, then converting that to a PNG
-  // format data URL. By drawing it on an offscreen canvas and then
-  // drawing that to the screen, we can change its size and/or apply
-  // other changes before drawing it.
-
-  function takepicture() {
-    var context = canvas.getContext('2d');
-    if (width && height) {
-      canvas.width = width;
-      canvas.height = height;
-      context.drawImage(video, 0, 0, width, height);
-    
-      var data = canvas.toDataURL('image/png');
-      photo.setAttribute('src', data);
-    } else {
-      clearphoto();
-    }
-  }
-
-  // Set up our event listener to run the startup process
-  // once loading is complete.
-  window.addEventListener('load', startup, false);
-})();
-</script>
 
 <script>
   (function() {
@@ -285,36 +184,6 @@
     window.addEventListener('load', startup, false);
   })();
 
-
-
-
-
-
-//       var video = document.getElementById('video');
-// //Get access to the camera!
-// if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-// // Not adding `{ audio: true }` since we only want video now
-//     navigator.mediaDevices.getUserMedia({video: true}).then(function (stream) {
-// //video.src = window.URL.createObjectURL(stream);
-//         video.srcObject = stream;
-//         video.play();
-//     });
-// } else if (navigator.getUserMedia) { // Standard
-//     navigator.getUserMedia({video: true}, function (stream) {
-//         video.src = stream;
-//         video.play();
-//     }, errBack);
-// } else if (navigator.webkitGetUserMedia) { // WebKit-prefixed
-//     navigator.webkitGetUserMedia({video: true}, function (stream) {
-//         video.src = window.webkitURL.createObjectURL(stream);
-//         video.play();
-//     }, errBack);
-// } else if (navigator.mozGetUserMedia) { // Mozilla-prefixed
-//     navigator.mozGetUserMedia({video: true}, function (stream) {
-//         video.srcObject = stream;
-//         video.play();
-//     }, errBack);
-// }
 var imageLoader = document.getElementById('imageLoader');
 imageLoader.addEventListener('change', handleImage, false);
 var canvas = document.getElementById('canvas');
@@ -361,14 +230,14 @@ function saveImage(e) {
 
              console.log(typeof array);
             
-            $('#result').text(' Predicted Output: '+array);
+            // $('#result').text(' Predicted Output: '+array);
             new Chart(document.getElementById("myChart"), {
             type: 'horizontalBar',
             data: {
               labels: ["surprised", "fearful", "disgusted", "happy", "sad", "angry", "neutral"],
               datasets: [
               {
-                label: "Population (millions)",
+                label: "Expression %",
                 backgroundColor: ["#3e95cd", "#8e5ea2","#3cba9f","#e8c3b9","#c45850", "#8e5ea2", "#3cba9f"],
                 data: array,
               }
@@ -377,10 +246,15 @@ function saveImage(e) {
                 options: {
                   scales: {
                     xAxes: [{
-                        stacked: true
+                        stacked: true,
+                        ticks: {
+                                        suggestedMin: 0, //min
+                                        suggestedMax: 100 //max 
+                                    }
                     }],
                     yAxes: [{
                         stacked: true
+                        
                     }]
                 },
                 legend: { display: false },
@@ -400,5 +274,157 @@ function saveImage(e) {
         // and than put the image in your browser.
     });
 }
+
+
+var happy = document.getElementById('happy');
+
+happy.addEventListener('click', happyImage, false);
+function happyImage(e) {
+    console.log('happy');
+    // var dataURL = canvas.toDataURL();
+    var dataURL = canvas.toDataURL('image/png');
+    $.ajax({
+        type: "GET",
+        url: "/happy-image",
+        data: {
+            imgBase64: dataURL
+        },
+        success: function(happyFace){
+          console.log(happyFace)
+        }
+    }).done(function (o) {
+        console.log('saved');
+        // If you want the file to be visible in the browser
+        // - please modify the callback in javascript. All you
+        // need is to return the url to the file, you just saved
+        // and than put the image in your browser.
+    });
+}
+
+var surprised = document.getElementById('surprised');
+
+surprised.addEventListener('click', surprisedImage, false);
+function surprisedImage(e) {
+    console.log('surprised');
+    // var dataURL = canvas.toDataURL();
+    var dataURL = canvas.toDataURL('image/png');
+    $.ajax({
+        type: "GET",
+        url: "/surprised-image",
+        data: {
+            imgBase64: dataURL
+        },
+        success: function(surprisedFace){
+          console.log(surprisedFace)
+        }
+    }).done(function (o) {
+        console.log('saved');
+        // If you want the file to be visible in the browser
+        // - please modify the callback in javascript. All you
+        // need is to return the url to the file, you just saved
+        // and than put the image in your browser.
+    });
+}
+
+var fear = document.getElementById('fear');
+
+fear.addEventListener('click', fearImage, false);
+function fearImage(e) {
+    console.log('fear');
+    // var dataURL = canvas.toDataURL();
+    var dataURL = canvas.toDataURL('image/png');
+    $.ajax({
+        type: "GET",
+        url: "/fear-image",
+        data: {
+            imgBase64: dataURL
+        },
+        success: function(fearFace){
+          console.log(fearFace)
+        }
+    }).done(function (o) {
+        console.log('fear_restored');
+        // If you want the file to be visible in the browser
+        // - please modify the callback in javascript. All you
+        // need is to return the url to the file, you just saved
+        // and than put the image in your browser.
+    });
+}
+
+var disgust = document.getElementById('disgust');
+
+disgust.addEventListener('click', disgustImage, false);
+function disgustImage(e) {
+    console.log('disgust');
+    // var dataURL = canvas.toDataURL();
+    var dataURL = canvas.toDataURL('image/png');
+    $.ajax({
+        type: "GET",
+        url: "/disgust-image",
+        data: {
+            imgBase64: dataURL
+        },
+        success: function(disgustFace){
+          console.log(disgustFace)
+        }
+    }).done(function (o) {
+        console.log('disgust_restored');
+        // If you want the file to be visible in the browser
+        // - please modify the callback in javascript. All you
+        // need is to return the url to the file, you just saved
+        // and than put the image in your browser.
+    });
+}
+
+var sad = document.getElementById('sad');
+
+sad.addEventListener('click', sadImage, false);
+function sadImage(e) {
+    console.log('sad');
+    // var dataURL = canvas.toDataURL();
+    var dataURL = canvas.toDataURL('image/png');
+    $.ajax({
+        type: "GET",
+        url: "/sad-image",
+        data: {
+            imgBase64: dataURL
+        },
+        success: function(sadFace){
+          console.log(sadFace)
+        }
+    }).done(function (o) {
+        console.log('sad_restored');
+        // If you want the file to be visible in the browser
+        // - please modify the callback in javascript. All you
+        // need is to return the url to the file, you just saved
+        // and than put the image in your browser.
+    });
+}
+
+var angry = document.getElementById('angry');
+
+angry.addEventListener('click', angryImage, false);
+function angryImage(e) {
+    console.log('angry');
+    // var dataURL = canvas.toDataURL();
+    var dataURL = canvas.toDataURL('image/png');
+    $.ajax({
+        type: "GET",
+        url: "/angry-image",
+        data: {
+            imgBase64: dataURL
+        },
+        success: function(angryFace){
+          console.log(angryFace)
+        }
+    }).done(function (o) {
+        console.log('fear_restored');
+        // If you want the file to be visible in the browser
+        // - please modify the callback in javascript. All you
+        // need is to return the url to the file, you just saved
+        // and than put the image in your browser.
+    });
+}
+
 </script>
     {% endblock %}
