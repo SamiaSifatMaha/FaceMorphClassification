@@ -436,11 +436,15 @@ def happy_image():
     im_rgb = cv2.cvtColor(read_img, cv2.COLOR_BGR2RGB)
 
     custom= happy(im_rgb)
+    happy_morphed= np.array2string(custom)
+    base64_str = base64.b64decode(str(custom.encode('utf-8')))
+
     print(custom)
+    print(base64_str)
     cv2.imwrite("upload/happy.jpg", custom)
     #custom = [x * 100 for x in custom]
         
-    return custom
+    return base64_str
 
 @app.route('/surprised-image', methods=['GET', 'POST'])
 def surprised_image():
