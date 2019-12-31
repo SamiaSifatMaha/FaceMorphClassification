@@ -275,7 +275,7 @@ function saveImage(e) {
     });
 }
 
-
+// get happy face from clicking the happy button to get image to canvasMorph
 var happy = document.getElementById('happy');
 
 happy.addEventListener('click', happyImage, false);
@@ -289,8 +289,12 @@ function happyImage(e) {
         data: {
             imgBase64: dataURL
         },
-        success: function(happyFace){
-          console.log(happyFace)
+        success: function(happyFace){ // image url
+          // array = happyFace.split(","),
+          img = $('<img id="canvasMorph">')
+          img.attr('src', 'data:image/png;base64,' + happyFace); // send image url to img id
+          img.appendTo('#canvasMorph');
+          console.log(typeof happyFace)
         }
     }).done(function (o) {
         console.log('saved');
@@ -300,6 +304,9 @@ function happyImage(e) {
         // and than put the image in your browser.
     });
 }
+
+
+// get surprised face from clicking the surprised button to get image to canvasMorph
 
 var surprised = document.getElementById('surprised');
 
@@ -326,6 +333,8 @@ function surprisedImage(e) {
     });
 }
 
+// get fear face from clicking the fear button to get image to canvasMorph
+
 var fear = document.getElementById('fear');
 
 fear.addEventListener('click', fearImage, false);
@@ -350,6 +359,8 @@ function fearImage(e) {
         // and than put the image in your browser.
     });
 }
+
+// get disgust face from clicking the disgust button to get image to canvasMorph
 
 var disgust = document.getElementById('disgust');
 
@@ -376,6 +387,9 @@ function disgustImage(e) {
     });
 }
 
+
+// get sad face from clicking the sad button to get image to canvasMorph
+
 var sad = document.getElementById('sad');
 
 sad.addEventListener('click', sadImage, false);
@@ -400,6 +414,8 @@ function sadImage(e) {
         // and than put the image in your browser.
     });
 }
+
+// get angry face from clicking the angry button to get image to canvasMorph
 
 var angry = document.getElementById('angry');
 
